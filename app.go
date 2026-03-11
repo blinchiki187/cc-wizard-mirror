@@ -1,11 +1,13 @@
 package main
 
-
 import (
-	"fmt"
 	"context"
+	"fmt"
+	"log"
+
 	appPkg "coopcloud.tech/abra/pkg/app"
 	containerPkg "coopcloud.tech/abra/pkg/container"
+
 	// "github.com/docker/docker/api/types"
 	// "github.com/docker/docker/api/types/filters"
 
@@ -14,7 +16,7 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	// "github.com/spf13/cobra"
 
-	"coopcloud.tech/abra/pkg/log"
+	// "coopcloud.tech/abra/pkg/log"
 	"coop-cloud-backend/api"
 )
 
@@ -44,11 +46,11 @@ import (
 // 		}
 // 	}
 
-// 	return envMap, nil
-// }
-func printApp(app appPkg.App) (error) {
+//		return envMap, nil
+//	}
+func printApp(app appPkg.App) error {
 	fmt.Printf("Name: %s | Domain: %s | Server: %s | Path: %s",
-				app.Name, app.Domain, app.Server, app.Path)
+		app.Name, app.Domain, app.Server, app.Path)
 	return nil
 }
 func connectToContainer(app appPkg.App, serviceName string) {
