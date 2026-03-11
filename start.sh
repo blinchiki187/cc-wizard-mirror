@@ -2,5 +2,5 @@
 
 /backend/app &
 
-cd /frontend
-npm run dev
+npm install
+npm run dev -- --host
