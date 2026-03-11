@@ -1,12 +1,20 @@
 package api
 import (
+	"context"
 	"fmt"
 	"log"
 	"encoding/json"
+	"coopcloud.tech/abra/pkg/client"
+	"coopcloud.tech/abra/pkg/upstream/stack"
+
 	appPkg "coopcloud.tech/abra/pkg/app"
 	configPkg "coopcloud.tech/abra/pkg/config"
+	deployPkg "coopcloud.tech/abra/pkg/deploy"
+
 	composetypes "github.com/docker/cli/cli/compose/types"	
 	"net/http"
+
+	"coop-cloud-backend/internal"
 )
 type abraHandler struct{
 	mux *http.ServeMux
@@ -15,7 +23,7 @@ func newAbraHandler() *abraHandler {
 	h := &abraHandler{
 		mux: http.NewServeMux(),
 	}
-	h.mux.HandleFunc("/api/abra/apps", func(w http.ResponseWriter, r *http.Request) {
+	h.mux.HandleFunc("/apps", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
@@ -30,7 +38,23 @@ func newAbraHandler() *abraHandler {
 			http.Error(w, "Method not implemented", http.StatusMethodNotAllowed)
 		}
 	})
-	h.mux.HandleFunc("/api/abra/servers", func(w http.ResponseWriter, r *http.Request) {
+	h.mux.HandleFunc("/apps/{serverId}/{appId}/deploy", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		switch r.Method{
+		case http.MethodPost:
+			h.handleDeployApp(w, r, r.PathValue("appId"), r.PathValue("serverId"))
+		default:
+			http.Error(w, "Method not implemented", http.StatusMethodNotAllowed)
+		}
+	})
+	h.mux.HandleFunc("/servers", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
@@ -66,6 +90,186 @@ func (h *abraHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // }
 
+func (h *abraHandler) handleDeployApp(w http.ResponseWriter, r *http.Request, appName string, serverId string) {
+	log.Printf("App Id: %s | Server Id: %s", appName, serverId)
+	app, err := GetApp(appName)
+	if err != nil {
+		log.Printf("Error getting app %s: %s\n", appName, err)
+		InternalServerErrorHandler(w, r)
+		return
+	}
+	cl, err := client.New(app.Server)
+	if err != nil {
+		log.Fatal(err)
+		InternalServerErrorHandler(w, r)
+		return
+	}
+	deployMeta, err := stack.IsDeployed(context.Background(), cl, app.StackName())
+	if err != nil {
+		log.Fatal(err)
+		InternalServerErrorHandler(w, r)
+		return
+	}
+	if deployMeta.IsDeployed {
+		log.Fatal("%s is already deployed", app.Name)
+		InternalServerErrorHandler(w, r)
+		return
+	}
+
+	// logic differs from CLI, we only want to take either
+	// 1. the chaos version
+	// 2. TODO: the version in the .env file
+	// 3. the latest version
+	// we never take: specific CLI verison (maybe will support this) or the deployed version
+	internal.Chaos = false
+	toDeployVersion, err := getDeployVersion(deployMeta, app)
+	if err != nil {
+		log.Fatal(err)
+		InternalServerErrorHandler(w, r)
+		return
+	}
+
+	if err := validateSecrets(cl, app); err != nil {
+		log.Fatal(err)
+		InternalServerErrorHandler(w, r)
+		return
+	}
+
+	if err := deployPkg.MergeAbraShEnv(app.Recipe, app.Env); err != nil {
+		log.Fatal(err)
+		InternalServerErrorHandler(w, r)
+		return
+	}
+
+	composeFiles, err := app.Recipe.GetComposeFiles(app.Env)
+	if err != nil {
+		log.Fatal(err)
+		InternalServerErrorHandler(w, r)
+		return
+	}
+
+	stackName := app.StackName()
+	deployOpts := stack.Deploy{
+		Composefiles: composeFiles,
+		Namespace:    stackName,
+		Prune:        false,
+		ResolveImage: stack.ResolveImageAlways,
+		Detach:       false,
+	}
+	compose, err := appPkg.GetAppComposeConfig(app.Name, deployOpts, app.Env)
+	if err != nil {
+		log.Fatal(err)
+		InternalServerErrorHandler(w, r)
+		return
+	}
+
+	appPkg.SetRecipeLabel(compose, stackName, app.Recipe.Name)
+	appPkg.SetChaosLabel(compose, stackName, internal.Chaos)
+	if internal.Chaos {
+		appPkg.SetChaosVersionLabel(compose, stackName, toDeployVersion)
+	}
+
+	versionLabel := toDeployVersion
+	if internal.Chaos {
+		for _, service := range compose.Services {
+			if service.Name == "app" {
+				labelKey := fmt.Sprintf("coop-cloud.%s.version", stackName)
+				// NOTE(d1): keep non-chaos version labbeling when doing chaos ops
+				versionLabel = service.Deploy.Labels[labelKey]
+			}
+		}
+	}
+	appPkg.SetVersionLabel(compose, stackName, versionLabel)
+
+	newRecipeWithDeployVersion := fmt.Sprintf("%s:%s", app.Recipe.Name, toDeployVersion)
+	appPkg.ExposeAllEnv(stackName, compose, app.Env, newRecipeWithDeployVersion)
+
+	envVars, err := appPkg.CheckEnv(app)
+	if err != nil {
+		log.Fatal(err)
+		InternalServerErrorHandler(w, r)
+		return
+	}
+	// doesn't really get used at all right now
+	deployWarnMessages := []string{}
+	for _, envVar := range envVars {
+		if !envVar.Present {
+			deployWarnMessages = append(deployWarnMessages,
+				fmt.Sprintf("%s missing from %s.env", envVar.Name, app.Domain),
+			)
+		}
+	}
+
+	//skipping domain checks like crazy
+	//commented code is to show deploy overview before deploy
+
+	/*
+	deployedVersion := configPkg.MISSING_DEFAULT
+	if deployMeta.IsDeployed {
+		deployedVersion = deployMeta.Version
+		if deployMeta.IsChaos {
+			deployedVersion = deployMeta.ChaosVersion
+		}
+	}
+	ShowUnchanged := false
+	secretInfo, err := deployPkg.GatherSecretsForDeploy(cl, app, ShowUnchanged)
+	if err != nil {
+		log.Fatal(err)
+		InternalServerErrorHandler(w, r)
+		return
+	}
+
+	// Gather configs
+	configInfo, err := deployPkg.GatherConfigsForDeploy(cl, app, compose, app.Env, ShowUnchanged)
+	if err != nil {
+		log.Fatal(err)
+		InternalServerErrorHandler(w, r)
+		return
+	}
+
+	// Gather images
+	imageInfo, err := deployPkg.GatherImagesForDeploy(cl, app, compose, ShowUnchanged)
+	if err != nil {
+		log.Fatal(err)
+		InternalServerErrorHandler(w, r)
+		return
+	}*/
+
+	stack.WaitTimeout, err = appPkg.GetTimeoutFromLabel(compose, stackName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	serviceNames, err := appPkg.GetAppServiceNames(app.Name)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	f, err := app.Filters(true, false, serviceNames...)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// in future allow user input?
+	DontWaitConverge := true
+	NoInput := true
+	if err := stack.RunDeploy(
+		cl,
+		deployOpts,
+		compose,
+		app.Name,
+		app.Server,
+		DontWaitConverge,
+		NoInput,
+		f,
+	); err != nil {
+		log.Fatal(err)
+		InternalServerErrorHandler(w, r)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
 func (h *abraHandler) handleListApps(w http.ResponseWriter, r *http.Request) {
 	appNames, err := GetAppNames()
 	if err != nil {

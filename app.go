@@ -4,7 +4,6 @@ package main
 import (
 	"fmt"
 	"context"
-	"log"
 	appPkg "coopcloud.tech/abra/pkg/app"
 	containerPkg "coopcloud.tech/abra/pkg/container"
 	// "github.com/docker/docker/api/types"
