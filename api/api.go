@@ -23,7 +23,7 @@ func newAbraHandler() *abraHandler {
 	h := &abraHandler{
 		mux: http.NewServeMux(),
 	}
-	h.mux.HandleFunc("/apps", func(w http.ResponseWriter, r *http.Request) {
+	h.mux.HandleFunc("/api/abra/apps", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
@@ -38,7 +38,7 @@ func newAbraHandler() *abraHandler {
 			http.Error(w, "Method not implemented", http.StatusMethodNotAllowed)
 		}
 	})
-	h.mux.HandleFunc("/apps/{serverId}/{appId}/deploy", func(w http.ResponseWriter, r *http.Request) {
+	h.mux.HandleFunc("/api/abra/apps/{appId}/deploy", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
@@ -46,15 +46,20 @@ func newAbraHandler() *abraHandler {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
-
+		if r.Header.Get("Chaos") == "true"{
+			internal.Chaos = true
+		} else {
+			internal.Chaos = false
+		}
+			
 		switch r.Method{
 		case http.MethodPost:
-			h.handleDeployApp(w, r, r.PathValue("appId"), r.PathValue("serverId"))
+			h.handleDeployApp(w, r, r.PathValue("appId"))
 		default:
 			http.Error(w, "Method not implemented", http.StatusMethodNotAllowed)
 		}
 	})
-	h.mux.HandleFunc("/servers", func(w http.ResponseWriter, r *http.Request) {
+	h.mux.HandleFunc("/api/abra/servers", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
@@ -90,8 +95,8 @@ func (h *abraHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // }
 
-func (h *abraHandler) handleDeployApp(w http.ResponseWriter, r *http.Request, appName string, serverId string) {
-	log.Printf("App Id: %s | Server Id: %s", appName, serverId)
+func (h *abraHandler) handleDeployApp(w http.ResponseWriter, r *http.Request, appName string) {
+	log.Printf("App Id: %s", appName)
 	app, err := GetApp(appName)
 	if err != nil {
 		log.Printf("Error getting app %s: %s\n", appName, err)
