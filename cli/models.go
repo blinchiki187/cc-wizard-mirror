@@ -1,4 +1,4 @@
-package api
+package cli
 
 // Represents an App, follows the format of 
 // https://git.coopcloud.tech/BornDeleuze/coop-cloud-front
@@ -48,3 +48,18 @@ type DeployStream struct {
 	health   string     `json:"health"`
 	rollback bool       `json:"rollback"`
 }  
+
+// type RecipeMeta struct {
+// 	Category      string         `json:"category"`
+// 	DefaultBranch string         `json:"default_branch"`
+// 	Description   string         `json:"description"`
+// 	Features      Features       `json:"features"`
+// 	Icon          string         `json:"icon"`
+// 	Name          string         `json:"name"`
+// 	Repository    string         `json:"repository"`
+// 	SSHURL        string         `json:"ssh_url"`
+// 	Versions      RecipeVersions `json:"versions"`
+// 	Website       string         `json:"website"`
+// }
+
+// type RecipeCatalogue map[Name]RecipeMeta

@@ -5,7 +5,9 @@ go 1.25.6
 require (
 	coopcloud.tech/abra v0.0.0-20260305102834-9d401202b4fb
 	github.com/charmbracelet/log v0.4.2
+	github.com/docker/cli v28.4.0+incompatible
 	github.com/docker/docker v28.5.2+incompatible
+	github.com/gorilla/websocket v1.4.0
 )
 
 require (
@@ -39,7 +41,6 @@ require (
 	github.com/cyphar/filepath-securejoin v0.5.0 // indirect
 	github.com/decentral1se/passgen v1.0.1 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/cli v28.4.0+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.9.3 // indirect
 	github.com/docker/go v1.5.1-1.0.20160303222718-d30aec9fd63c // indirect

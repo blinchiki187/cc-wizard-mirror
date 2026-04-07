@@ -14,7 +14,7 @@ var (
 	DontWaitConverge bool
 	Dry              bool
 	Force            bool
-	MachineReadable  bool
+	Secrets  		 bool
 	Major            bool
 	Minor            bool
 	NoDomainChecks   bool

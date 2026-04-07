@@ -17,7 +17,7 @@ import (
 	// "github.com/spf13/cobra"
 
 	// "coopcloud.tech/abra/pkg/log"
-	"coop-cloud-backend/api"
+	"coop-cloud-backend/cli"
 )
 
 // getEnv reads env variables from docker services.
@@ -82,5 +82,5 @@ func main() {
 		fmt.Println(val)
 	}
 
-	api.StartAPI()
+	cli.StartAPI()
 }

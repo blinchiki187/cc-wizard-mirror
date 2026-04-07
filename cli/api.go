@@ -1,4 +1,4 @@
-package api
+package cli
 import (
 	"fmt"
 	"log"
@@ -117,15 +117,29 @@ func newAbraHandler() *abraHandler {
 			http.Error(w, "Method not implemented", http.StatusMethodNotAllowed)
 		}
 	})
+
+	h.mux.HandleFunc("/api/abra/apps/{appId}/new", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		switch r.Method{
+		case http.MethodPost:
+			h.handleNewApp(w, r, r.PathValue("appId"))
+		default:
+			http.Error(w, "Method not implemented", http.StatusMethodNotAllowed)
+		}
+	})
 	return h
 }
 func StartAPI() {
-	http.HandleFunc("/ws", wsHandler)
+	/*http.HandleFunc("/ws", wsHandler)
     fmt.Println("WebSocket server started on :3001")
-    err := http.ListenAndServe(":3001", nil)
+	err := http.ListenAndServe(":3001", nil)
     if err != nil {
        fmt.Println("Error starting server:", err)
-    }
+    }*/
 
 	h := newAbraHandler()
 	fmt.Println("Server started on port 3000")
