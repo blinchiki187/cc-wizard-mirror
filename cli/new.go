@@ -13,10 +13,10 @@ func (h *abraHandler) handleNewApp(w http.ResponseWriter, r *http.Request, appNa
 
 	// anonymous struct type: handy for one-time use
 	body := struct {
-		Domain  *string `json:"domain"`
-		Server  *string `json:"server"`
-		Chaos   *bool   `json:"chaos"` 
-		Secrets *bool   `json:"secrets"` 
+		Domain  	  *string 	`json:"domain"`
+		Server  	  *string 	`json:"server"`
+		Chaos   	  *bool   	`json:"chaos"` 
+		CreateSecrets *bool   	`json:"createSecrets"` 
 	}{}
 	
 	err := d.Decode(&body)
@@ -39,7 +39,7 @@ func (h *abraHandler) handleNewApp(w http.ResponseWriter, r *http.Request, appNa
 	if body.Chaos != nil && *body.Chaos == true {
 		args = append(args, "-C")
 	}
-	if body.Chaos != nil && *body.Secrets == true {
+	if body.CreateSecrets != nil && *body.CreateSecrets == true {
 		args = append(args, "--secrets")
 	}
 	log.Printf("%v", args)

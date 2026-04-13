@@ -45,12 +45,7 @@ func newAbraHandler() *abraHandler {
 	h := &abraHandler{
 		mux: http.NewServeMux(),
 	}
-	h.mux.HandleFunc("/api/abra/apps", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return 
-		}
+	h.mux.HandleFunc("/api/apps", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet: 
 			h.handleListApps(w, r)
@@ -58,12 +53,7 @@ func newAbraHandler() *abraHandler {
 			http.Error(w, "Method not implemented", http.StatusMethodNotAllowed)
 		}
 	})
-	h.mux.HandleFunc("/api/abra/apps/{appId}/deploy", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
+	h.mux.HandleFunc("/api/apps/{appId}/deploy", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Chaos") == "true"{
 			internal.Chaos = true
 		} else {
@@ -77,13 +67,7 @@ func newAbraHandler() *abraHandler {
 			http.Error(w, "Method not implemented", http.StatusMethodNotAllowed)
 		}
 	})
-	h.mux.HandleFunc("/api/abra/apps/{appId}/stop", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-			
+	h.mux.HandleFunc("/api/apps/{appId}/stop", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method{
 		case http.MethodPost:
 			h.handleUndeployApp(w, r, r.PathValue("appId"))
@@ -91,12 +75,7 @@ func newAbraHandler() *abraHandler {
 			http.Error(w, "Method not implemented", http.StatusMethodNotAllowed)
 		}
 	})
-	h.mux.HandleFunc("/api/abra/servers", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return 
-		}
+	h.mux.HandleFunc("/api/servers", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet: 
 			h.handleListServers(w, r)
@@ -104,12 +83,7 @@ func newAbraHandler() *abraHandler {
 			http.Error(w, "Method not implemented", http.StatusMethodNotAllowed)
 		}
 	})
-	h.mux.HandleFunc("/api/abra/catalogue", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return 
-		}
+	h.mux.HandleFunc("/api/catalogue", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet: 
 			h.handleListCatalogue(w, r)
@@ -118,15 +92,46 @@ func newAbraHandler() *abraHandler {
 		}
 	})
 
-	h.mux.HandleFunc("/api/abra/apps/{appId}/new", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
+	h.mux.HandleFunc("/api/apps/{appId}/new", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method{
 		case http.MethodPost:
 			h.handleNewApp(w, r, r.PathValue("appId"))
+		default:
+			http.Error(w, "Method not implemented", http.StatusMethodNotAllowed)
+		}
+	})
+	h.mux.HandleFunc("/api/apps/{appId}/config", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method{
+		case http.MethodPost:
+			h.handlePostConfig(w, r, r.PathValue("appId"))
+		case http.MethodGet:
+			h.handleGetConfig(w, r, r.PathValue("appId"))
+		default:
+			http.Error(w, "Method not implemented", http.StatusMethodNotAllowed)
+		}
+	})
+	h.mux.HandleFunc("/api/apps/{appId}/secret", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method{
+		case http.MethodPost:
+			h.handleInsertAppSecret(w, r, r.PathValue("appId"))
+		case http.MethodGet:
+			h.handleGetAppSecrets(w, r, r.PathValue("appId"))
+		default:
+			http.Error(w, "Method not implemented", http.StatusMethodNotAllowed)
+		}
+	})
+	h.mux.HandleFunc("/api/apps/{appId}/services", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method{
+		case http.MethodGet:
+			h.handleGetAppServices(w, r, r.PathValue("appId"))
+		default:
+			http.Error(w, "Method not implemented", http.StatusMethodNotAllowed)
+		}
+	})
+	h.mux.HandleFunc("/api/apps/{appId}/{serviceId}/logs", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method{
+		case http.MethodGet:
+			h.handleGetLogs(w, r, r.PathValue("appId"), r.PathValue("serviceId"))
 		default:
 			http.Error(w, "Method not implemented", http.StatusMethodNotAllowed)
 		}
@@ -150,8 +155,12 @@ func (h *abraHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Pre-processing: logging
 	log.Printf("Incoming %s request: %s\n", r.Method, r.URL.Path)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 	// Delegate to internal mux
 	h.mux.ServeHTTP(w, r)
 }

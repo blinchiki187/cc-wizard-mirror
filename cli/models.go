@@ -49,6 +49,23 @@ type DeployStream struct {
 	rollback bool       `json:"rollback"`
 }  
 
+type AppSecret struct {
+	Name string 		`json:"name"`
+	Version string		`json:"version"`
+	Value string		`json:"value"`
+}
+
+type AbraAppService struct {
+	Service string	`json:"service"`
+	Chaos bool		`json:"chaos"`
+	Created string	`json:"created"`
+	Image string	`json:"image"`
+	Ports string	`json:"ports"`
+	State string	`json:"state"`
+	Status string	`json:"status"`
+	Version string	`json:"version"`
+}
+
 // type RecipeMeta struct {
 // 	Category      string         `json:"category"`
 // 	DefaultBranch string         `json:"default_branch"`
