@@ -34,7 +34,7 @@ Repackaging
 | View and pull in recipes from catalogue | In Progress | |
 | Deploy should show deployment status similar to Abra CLI | In Progress | |
 | App screen should display services associated with app and their status | TODO | | 
-| Easily show service logs | TODO | |
+| Easily show service logs | In Progress | |
 | Modify App config | TODO | |
 | Manage updates and rollbacks | TODO | |
-| Manage secrets and Abra commands | TODO | |
+| Manage secrets and Abra commands | In Progress | |
