@@ -5,11 +5,9 @@ Integrates with https://git.coopcloud.tech/BornDeleuze/coop-cloud-front.
 ## Starting the service with Docker
 TODO
 
-## Getting started
+## Getting started with development
 - Clone the front end application `git clone https://git.coopcloud.tech/BornDeleuze/coop-cloud-front.git`
 - Checkout the `dev-nomock` branch `cd coop-cloud-front && git checkout dev-nomock`
-
-- Edit the front-end application to turn off mock mode in `src/routes/Authenticated/Apps/App.tsx` and `src/routes/Authenticated/Apps/Apps.tsx` and `src/routes/Authenticated/Dashboard/Dashboard.tsx` and `src/routes/Authenticated/Recipes/Recipes.tsx`
 - Launch the front-end application `npm run dev`  
 - Start this Go app `go run .`  
 - Navigate to the React App (http://localhost:5173)  
