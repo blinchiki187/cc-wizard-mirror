@@ -5,7 +5,7 @@ import (
 	"coop-cloud-backend/internal"
 	"coop-cloud-backend/cli/status"
 	"net/http"
-	//"encoding/json"
+	"encoding/json"
 	"fmt"
 	"context"
 
@@ -36,6 +36,11 @@ func (h *abraHandler) handleDeployApp(w http.ResponseWriter, r *http.Request, ap
 		InternalServerErrorHandler(w, r)
 		return
 	}
+	log.Printf("Finishing app deploy!")
+	w.WriteHeader(http.StatusOK)
+}
+func (h *abraHandler) getDeployLogs(w http.ResponseWriter, r *http.Request, appName string) {
+	log.Printf("Get deploy logs!")
 	app, err :=  appPkg.Get(appName)
 	if err != nil {
 		log.Printf("Error: %s\n", err)
@@ -80,10 +85,43 @@ func (h *abraHandler) handleDeployApp(w http.ResponseWriter, r *http.Request, ap
 			ID: service.ID,
 		})
 	}
-	log.Printf("Waiting on service...")
-	status.WaitOnServices(context.Background(), cl, serviceIDs, f)
+	ctx := r.Context()
 
-	w.WriteHeader(http.StatusOK)
+	flusher, ok := w.(http.Flusher)
+    if !ok {
+        http.Error(w, "Streaming unsupported", http.StatusInternalServerError)
+        return
+    }
+    w.Header().Set("Content-Type", "text/event-stream")
+    w.Header().Set("Cache-Control", "no-cache")
+    w.Header().Set("Connection", "keep-alive")
+	log.Printf("Waiting on service...")
+	
+	stream := make (chan status.StreamEvent, 50)
+	go status.WaitOnServices(ctx, cl, serviceIDs, f, stream)
+	for {
+		select{
+		case <- ctx.Done():
+			log.Printf("deploy cancelled or done")
+			return
+		case msg, ok := <- stream:
+			if !ok {
+				return
+			}
+			test, err := json.MarshalIndent(msg, "", "  ")
+			fmt.Printf(string(test), err);
+			b, err := json.Marshal(msg)
+			if err != nil {
+				// TODO: send error through onerror handler
+				log.Printf("error?: %s", err)
+				continue
+			}
+			fmt.Fprintf(w, "data: %s\n\n", b)
+
+			flusher.Flush()
+		}
+	}
+
 }
 
 

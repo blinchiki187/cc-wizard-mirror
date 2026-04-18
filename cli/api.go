@@ -45,6 +45,10 @@ func newAbraHandler() *abraHandler {
 	h := &abraHandler{
 		mux: http.NewServeMux(),
 	}
+	h.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("API Path not found")
+		http.Error(w, "API Path not found", http.StatusMethodNotAllowed)
+	})
 	h.mux.HandleFunc("/api/apps", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet: 
@@ -63,6 +67,8 @@ func newAbraHandler() *abraHandler {
 		switch r.Method{
 		case http.MethodPost:
 			h.handleDeployApp(w, r, r.PathValue("appId"))
+		case http.MethodGet:
+			h.getDeployLogs(w, r, r.PathValue("appId"))
 		default:
 			http.Error(w, "Method not implemented", http.StatusMethodNotAllowed)
 		}

@@ -42,6 +42,10 @@ type StatusEvent struct {
 }
 func (e StatusEvent) ServiceID() string { return e.Service.Id }
 
+type StreamEvent struct {
+    Type string      `json:"type"` // "service" | "done"
+    Data interface{} `json:"data"`
+}
 
 type ServiceState struct {
 	Name 	 string `json:"name"`
@@ -55,10 +59,10 @@ type ServiceState struct {
 }
 
 type DeployState struct {
-	count int
-	total int
-	failed bool
-	quit bool
+	Count int	`json:"count"`
+	Total int	`json:"total"`
+	Failed bool	`json:"failed"`
+	Quit bool	`json:"quit"`
 }
 
 type DeployMsg int
@@ -69,7 +73,7 @@ const (
 )
 
 func (ds DeployState) complete() bool {
-	return ds.count == ds.total
+	return ds.Count == ds.Total
 }
 
 func progressProducer(ctx context.Context, cl *dockerClient.Client, s ServiceState, w *io.PipeWriter, ch chan<- Event) {
@@ -164,7 +168,7 @@ func healthProducer(ctx context.Context, cl *dockerClient.Client, s ServiceState
 	}()
 }
 
-func processEvent(ctx context.Context, events <- chan Event, info chan <- DeployMsg, s ServiceState) error {
+func processEvent(ctx context.Context, events <- chan Event, info chan <- DeployMsg, s ServiceState, stream chan <- StreamEvent) error {
 	for {
 		select {
 		case event := <- events:
@@ -237,31 +241,30 @@ func processEvent(ctx context.Context, events <- chan Event, info chan <- Deploy
 				}
 				s.Health = h
 			}
-
+			stream <- StreamEvent{Type: "service", Data: s}
 		case <- ctx.Done():
-			log.Printf("context is done???")
 			return ctx.Err()
 		}
 	}
 }
-func processService(ctx context.Context, info chan <- DeployMsg, cl *dockerClient.Client, s ServiceState, decoder *json.Decoder, writer *io.PipeWriter) {
+func processService(ctx context.Context, info chan <- DeployMsg, cl *dockerClient.Client, s ServiceState, decoder *json.Decoder, writer *io.PipeWriter, stream chan <- StreamEvent) {
 	events := make (chan Event, 50)
 	progressProducer(ctx, cl, s, writer, events)
 	statusProducer(ctx, decoder, s, events)
 	healthProducer(ctx, cl, s, events)
 
-	go processEvent(ctx, events, info, s)
+	go processEvent(ctx, events, info, s, stream)
 }
 
-func WaitOnServices(pctx context.Context, cl *dockerClient.Client, services []ui.ServiceMeta, filters filters.Args) {
+func WaitOnServices(pctx context.Context, cl *dockerClient.Client, services []ui.ServiceMeta, filters filters.Args, stream chan <- StreamEvent) {
 	ctx, cancel := context.WithCancel(pctx)
 	defer cancel()
-
+	log.Printf("What???")
 	ds := DeployState{
-		count: 0,
-		total: len(services),
-		failed: false,
-		quit: false,
+		Count: 0,
+		Total: len(services),
+		Failed: false,
+		Quit: false,
 	}
 	info := make (chan DeployMsg, 50)
 	for _, service := range services {
@@ -274,25 +277,27 @@ func WaitOnServices(pctx context.Context, cl *dockerClient.Client, services []ui
 			Health: "?",
 		}
 		log.Printf("Processing Service: %s", s.Id)
-		processService(ctx, info, cl, s, d, w)
+		processService(ctx, info, cl, s, d, w, stream)
 	}
 	for {
 		select {
 		case msg := <-info:
 			switch msg {
 			case FailMsg:
-				ds.failed = true
+				ds.Failed = true
 			case CompleteMsg:
-				ds.count += 1
+				ds.Count += 1
 				if ds.complete() {
 					log.Printf("deploy completed")
 					cancel()
 				}
 			case QuitMsg:
-				ds.quit = true
+				ds.Quit = true
 				cancel()
 			}
 		case <-ctx.Done():
+			log.Printf("%v", ds)
+			stream <- StreamEvent{Type: "done", Data: ds}
 			log.Printf("Context finished because: %s", ctx.Err())
 			return
 		}

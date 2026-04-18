@@ -16,7 +16,7 @@ func (h *abraHandler) handleNewApp(w http.ResponseWriter, r *http.Request, appNa
 		Domain  	  *string 	`json:"domain"`
 		Server  	  *string 	`json:"server"`
 		Chaos   	  *bool   	`json:"chaos"` 
-		CreateSecrets *bool   	`json:"createSecrets"` 
+		Secrets		  *bool   	`json:"secrets"` 
 	}{}
 	
 	err := d.Decode(&body)
@@ -39,7 +39,7 @@ func (h *abraHandler) handleNewApp(w http.ResponseWriter, r *http.Request, appNa
 	if body.Chaos != nil && *body.Chaos == true {
 		args = append(args, "-C")
 	}
-	if body.CreateSecrets != nil && *body.CreateSecrets == true {
+	if body.Secrets != nil && *body.Secrets == true {
 		args = append(args, "--secrets")
 	}
 	log.Printf("%v", args)

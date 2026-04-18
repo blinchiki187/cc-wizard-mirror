@@ -24,8 +24,8 @@ func (h *abraHandler) handleListCatalogue(w http.ResponseWriter, r *http.Request
 		http.Error(w, fmt.Sprintf("Error: %s\n", err), http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	w.Write(jsonBytes)
 }
 
