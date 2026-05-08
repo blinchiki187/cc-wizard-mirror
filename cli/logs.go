@@ -80,7 +80,6 @@ func (h *abraHandler) handleGetLogs(w http.ResponseWriter, r *http.Request, appN
 				return
 			}
 			fmt.Fprintf(w, "data: %s\n\n", line)
-			log.Printf(line)
 			flusher.Flush()
 		}
 	}

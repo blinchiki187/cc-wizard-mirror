@@ -81,6 +81,14 @@ func newAbraHandler() *abraHandler {
 			http.Error(w, "Method not implemented", http.StatusMethodNotAllowed)
 		}
 	})
+	h.mux.HandleFunc("/api/apps/{appId}/remove", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method{
+		case http.MethodPost:
+			h.handleRemoveApp(w, r, r.PathValue("appId"))
+		default:
+			http.Error(w, "Method not implemented", http.StatusMethodNotAllowed)
+		}
+	})
 	h.mux.HandleFunc("/api/servers", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet: 
