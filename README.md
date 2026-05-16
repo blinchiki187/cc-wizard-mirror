@@ -1,6 +1,6 @@
 # coop-cloud-backend
 A Go service that exposes RESTful API endpoints to manage Abra programmatically.  
-Integrates with https://git.coopcloud.tech/BornDeleuze/coop-cloud-front.  
+Integrates with https://git.coopcloud.tech/toolshed/coop-cloud-front.  
 
 ## Starting the service with Docker
 Build the container:
@@ -14,7 +14,7 @@ docker run abra-wizard
 ```
 
 ## Getting started with development
-- Clone the front end application `git clone https://git.coopcloud.tech/BornDeleuze/coop-cloud-front.git`
+- Clone the front end application `git clone https://git.coopcloud.tech/toolshed/coop-cloud-front.git`
 - Checkout the `dev-nomock` branch `cd coop-cloud-front && git checkout dev-nomock`
 - Launch the front-end application `npm run dev`  
 - Start this Go app `go run .`  

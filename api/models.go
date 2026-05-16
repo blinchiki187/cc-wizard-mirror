@@ -1,7 +1,7 @@
 package api
 
 // Represents an App, follows the format of 
-// https://git.coopcloud.tech/BornDeleuze/coop-cloud-front
+// https://git.coopcloud.tech/toolshed/coop-cloud-front
 type AbraApp struct {
     Server        string `json:"server"`
     Recipe        string `json:"recipe`
