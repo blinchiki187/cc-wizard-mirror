@@ -1,0 +1,17 @@
+---
+kind: pipeline
+name: coopcloud.tech/abra-wizard
+steps:
+
+  - name: publish image
+    image: plugins/docker
+    settings:
+      auto_tag: true
+      username: abra-wizard-bot
+      password:
+        from_secret: git_coopcloud_tech_token_abra_wizard
+      repo: git.coopcloud.tech/toolshed/coop-cloud-backend
+      registry: git.coopcloud.tech
+    when:
+      event:
+        - tag
