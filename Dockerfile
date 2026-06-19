@@ -9,9 +9,6 @@ COPY --from=0 /backend/gobackend /home/node/wizard/gobackend
 
 USER node
 COPY ./command.sh /
-COPY ssh_config /home/node/.ssh/config
-COPY id_ed25519_* /home/node/.ssh/
-COPY dot_abra /home/node/.abra/
 RUN curl https://install.abra.coopcloud.tech | bash
 ENV ABRA_BIN=/home/node/.local/bin/abra
 # RUN $ABRA_BIN recipe fetch -a
@@ -25,4 +22,5 @@ USER node
 
 EXPOSE 5173 3000
 # ENV VITE_API_URL=http://localhost:3000/api
+ENV VITE_MOCK_AUTH=false
 CMD [ "/command.sh" ]

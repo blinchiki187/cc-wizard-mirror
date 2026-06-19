@@ -5,12 +5,12 @@ Integrates with https://git.coopcloud.tech/toolshed/coop-cloud-front.
 ## Starting the service with Docker
 Build the container:
 ```bash
-docker build -t abra-wizard:latest
+docker build -t coop-cloud-wizard:latest
 ```
 
 Run the container:
 ```bash
-docker run abra-wizard
+docker run -u 1000:1000 -v "$HOME/.abra:/home/node/.abra" -v "$HOME/.ssh:/home/node/.ssh" coop-cloud-wizard
 ```
 
 ## Getting started with development
