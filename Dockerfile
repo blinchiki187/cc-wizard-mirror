@@ -3,7 +3,7 @@ RUN mkdir /backend
 COPY  --parents ["api", "cli", "internal", "go.mod", "go.sum", "app.go", "/backend/"]
 RUN go build -C /backend -o gobackend
 
-FROM node
+FROM node:slim
 RUN mkdir /home/node/wizard
 COPY --from=0 /backend/gobackend /home/node/wizard/gobackend
 
