@@ -1,3 +1,3 @@
 [submodule "web"]
 	path = web
-	url = ssh://git@git.coopcloud.tech:2222/toolshed/coop-cloud-front.git
+        url = https://git.coopcloud.tech/toolshed/coop-cloud-backend.git
