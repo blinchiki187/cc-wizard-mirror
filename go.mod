@@ -4,7 +4,7 @@ go 1.25.6
 
 require (
 	coopcloud.tech/abra v0.0.0-20260305102834-9d401202b4fb
-	github.com/charmbracelet/log v0.4.2
+	github.com/charmbracelet/log/v2 v2.0.0
 	github.com/docker/cli v28.4.0+incompatible
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/gorilla/websocket v1.4.0
