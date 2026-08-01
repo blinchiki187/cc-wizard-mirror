@@ -4,14 +4,15 @@ go 1.25.6
 
 require (
 	coopcloud.tech/abra v0.0.0-20260305102834-9d401202b4fb
+	coopcloud.tech/tagcmp v0.0.0-20250818180036-0ec1b205b5ca
+	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/log v0.4.2
 	github.com/docker/cli v28.4.0+incompatible
 	github.com/docker/docker v28.5.2+incompatible
-	github.com/gorilla/websocket v1.4.0
+	github.com/gorilla/websocket v1.5.3
 )
 
 require (
-	coopcloud.tech/tagcmp v0.0.0-20250818180036-0ec1b205b5ca // indirect
 	dario.cat/mergo v1.0.2 // indirect
 	git.coopcloud.tech/coop-cloud/godotenv v1.5.2-0.20231130100509-01bff8284355 // indirect
 	git.coopcloud.tech/toolshed/godotenv v1.5.2-0.20250103171850-4d0ca41daa5c // indirect
@@ -25,7 +26,6 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/charmbracelet/bubbletea v1.3.10 // indirect
 	github.com/charmbracelet/colorprofile v0.3.2 // indirect
 	github.com/charmbracelet/lipgloss v1.1.0 // indirect
 	github.com/charmbracelet/x/ansi v0.10.2 // indirect
