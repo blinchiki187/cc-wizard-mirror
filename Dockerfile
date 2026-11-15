@@ -1,9 +1,9 @@
-FROM golang:1.25
+FROM golang:1.25@sha256:699337d620559a59b4a2bb298ad59611e535d2ee755a34cf2d2a98f37578dc80
 RUN mkdir /backend
 COPY  --parents ["api", "cli", "internal", "go.mod", "go.sum", "app.go", "/backend/"]
 RUN go build -C /backend -o gobackend
 
-FROM node:slim
+FROM node:slim@sha256:e6bedef217677b276c591795e169840edd9096dbf13f29df8ef8d1856b8820bc
 RUN mkdir /home/node/wizard
 COPY --from=0 /backend/gobackend /home/node/wizard/gobackend
 
