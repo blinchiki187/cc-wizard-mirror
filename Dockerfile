@@ -1,4 +1,4 @@
-FROM golang:1.25
+FROM golang:1.27@sha256:205c7636d74e0ffbe3d007162df7d74f859f5a8c8322dfb9f907977686c126cf
 RUN mkdir /backend
 COPY  --parents ["api", "cli", "internal", "go.mod", "go.sum", "app.go", "/backend/"]
 RUN go build -C /backend -o gobackend
